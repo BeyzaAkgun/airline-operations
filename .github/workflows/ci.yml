@@ -63,3 +63,92 @@ jobs:
 
       - name: Run backend tests
         run: bash mvnw --batch-mode test
+
+  e2e:
+    name: Playwright E2E tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [frontend, backend]
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: airline_operations_e2e
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: e2e_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airline_operations_e2e"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Package backend
+        working-directory: backend
+        run: bash mvnw --batch-mode -DskipTests package
+
+      - name: Start backend with E2E profile
+        working-directory: backend
+        env:
+          DB_PASSWORD: e2e_test_password
+        run: |
+          nohup java -jar target/airline-operations-api-0.0.1-SNAPSHOT.jar \
+            --spring.profiles.active=e2e \
+            > backend-e2e.log 2>&1 &
+
+      - name: Wait for backend
+        run: |
+          for attempt in {1..60}; do
+            if curl --fail --silent --max-time 2 \
+              http://localhost:8080/api/flights/TX23 > /dev/null; then
+              echo "Backend is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          cat backend/backend-e2e.log
+          exit 1
+
+      - name: Run Playwright tests
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Upload E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e-diagnostics
+          path: |
+            frontend/test-results/
+            backend/backend-e2e.log
+          retention-days: 7
