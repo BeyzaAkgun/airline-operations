@@ -1,0 +1,120 @@
+<form [formGroup]="flightForm" (ngSubmit)="onSubmit()" class="flight-form">
+ <h2>{{ isEditMode() ? 'Edit Flight' : 'Add Flight' }}</h2>
+ @if(loadingFlight()){
+  <p role="status">Loading flight...</p>
+ }
+ <div class="form-field">
+  <label for="flightNumber" >Flight Number</label>
+  <input type="text" id="flightNumber" name="flightNumber" formControlName="flightNumber">
+  @if (
+  flightForm.controls.flightNumber.touched &&
+  (flightForm.controls.flightNumber.hasError("required") ||
+   flightForm.controls.flightNumber.hasError("blank"))
+) {
+  <p class="field-error">Flight number is required.</p>
+}
+
+
+@if (
+  flightForm.controls.flightNumber.touched &&
+  flightForm.controls.flightNumber.hasError("duplicate")
+) {
+  <p class="field-error">This flight number already exists.</p>
+}
+@if (
+  flightForm.controls.flightNumber.touched &&
+  (flightForm.controls.flightNumber.hasError('minlength') ||
+   flightForm.controls.flightNumber.hasError('maxlength'))
+) {
+  <p class="field-error">Flight number must be between 2 and 10 characters.</p>
+}
+
+@if (serverFieldErrors()['flightNumber']; as message) {
+  <p class="field-error" role="alert">{{ message }}</p>
+}
+</div>
+<div class="form-field">
+  <label for="origin">Origin</label>
+  <input type="text" id="origin" name="origin" formControlName="origin">
+    @if(flightForm.controls.origin.touched && (flightForm.controls.origin.hasError("required")||flightForm.controls.origin.hasError("blank"))){
+    <p class="field-error">Origin is required.</p>
+  }
+  @if (serverFieldErrors()['origin']; as message) {
+  <p class="field-error" role="alert">{{ message }}</p>
+}
+@if (
+  flightForm.controls.origin.touched &&
+  flightForm.controls.origin.hasError('maxlength')
+) {
+  <p class="field-error">Origin must not exceed 100 characters.</p>
+}
+ 
+  </div>
+  <div class="form-field">
+
+  <label for="destination">Destination</label>
+  <input type="text" id="destination" name="destination" formControlName="destination">
+    @if(flightForm.controls.destination.touched && (flightForm.controls.destination.hasError("required")||flightForm.controls.destination.hasError("blank"))){
+    <p class="field-error">Destination is required.</p>
+  }
+   @if(flightForm.controls.destination.touched && (flightForm.controls.destination.hasError('maxlength'))){
+    <p class="field-error">Destination must not exceed 100 characters.</p>
+   }
+  @if (serverFieldErrors()['destination']; as message) {
+  <p class="field-error" role="alert">{{ message }}</p>
+}
+  </div>
+  <div class="form-field">
+  <label for="status">Status</label>
+    <select id="status" formControlName="status">
+        <option value="SCHEDULED">Scheduled</option>
+        <option value="DELAYED">Delayed</option>
+        <option value="CANCELED">Canceled</option>
+    </select>
+
+    @if (serverFieldErrors()['status']; as message) {
+  <p class="field-error" role="alert">{{ message }}</p>
+}
+
+    </div>
+    <div class="form-field">
+  <label for="departureTime">Departure Time (local)</label>
+  <input type="datetime-local" id="departureTime" name="departureTime" formControlName="departureTime">
+    @if(flightForm.controls.departureTime.touched && (flightForm.controls.departureTime.hasError("required")|| flightForm.controls.departureTime.hasError("invalidDate"))){
+    <p class="field-error">Enter a valid departure date and time.</p>
+  }
+  @if (serverFieldErrors()['departureTime']; as message) {
+  <p class="field-error" role="alert">{{ message }}</p>
+}
+  </div>
+  <div class="form-field">
+  <label for="gate">Gate</label>
+  <input type="text" id="gate" name="gate" formControlName="gate">
+  @if (
+  flightForm.controls.gate.touched &&
+  flightForm.controls.gate.hasError('maxlength')
+) {
+  <p class="field-error">Gate must not exceed 10 characters.</p>
+}
+    @if (serverFieldErrors()['gate']; as message) {
+  <p class="field-error" role="alert">{{ message }}</p>
+}
+  </div>
+  <div class="form-actions">
+    <button
+  type="submit"
+  [disabled]="!flightForm.valid || saving()"
+  class="btn btn-primary"
+>
+  {{ saving() ? 'Saving...' : (isEditMode() ? 'Save Changes' : 'Add Flight') }}
+</button>
+  <a routerLink="/" class="btn btn-secondary">Back to dashboard</a>
+  </div>
+  @if(errorMessage();as message){
+    <p role="alert">{{message}}</p>
+  }
+  @if(successMessage();as message){
+    <p role="status">{{message}}</p>
+  }
+
+</form>

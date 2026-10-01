@@ -1,0 +1,8 @@
+<span
+   class="status-badge"
+   [class.status-scheduled]="status==='SCHEDULED'"
+   [class.status-delayed]="status==='DELAYED'"
+   [class.status-canceled]="status==='CANCELED'"
+   >             
+   {{status}}
+</span>

@@ -1,0 +1,8 @@
+@use './variables' as vars;
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid vars.$color-primary;
+    outline-offset: 2px;
+  }
+}

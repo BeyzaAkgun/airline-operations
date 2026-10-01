@@ -1,0 +1,73 @@
+@use './styles/variables' as vars;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: vars.$color-background;
+  color: vars.$color-text;
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid vars.$color-primary;
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.btn-primary {
+    background-color: vars.$color-primary;
+    color: vars.$color-surface;
+
+    &:hover:not(:disabled) {
+      background-color: vars.$color-primary-hover;
+    }
+  }
+
+  &.btn-secondary {
+    background-color: vars.$color-surface;
+    color: #334155;
+    border-color: #94a3b8;
+
+    &:hover:not(:disabled) {
+      background-color: #e2e8f0;
+    }
+  }
+
+  &.btn-danger {
+    background-color: vars.$color-danger;
+    color: vars.$color-surface;
+
+    &:hover:not(:disabled) {
+      background-color: #991b1b;
+    }
+  }
+}

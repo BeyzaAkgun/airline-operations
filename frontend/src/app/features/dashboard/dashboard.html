@@ -1,0 +1,72 @@
+<section class="dashboard-section">
+  <h2>Flight Overview</h2>
+
+  @if (loading()) {
+    <p role="status">Loading flights...</p>
+  } @else if (loadErrorMessage(); as message) {
+    <p role="alert">{{ message }}</p>
+    <button type="button" (click)="loadFlights()">Retry</button>
+  } @else {
+    <div class="flight-filters">
+      <div class="filter-field">
+        <label for="flight-search">Search by Flight Number</label>
+        <input
+          id="flight-search"
+          type="text"
+          [formControl]="searchControl"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-status">Filter by Status</label>
+        <select id="filter-status" [formControl]="statusControl">
+          <option value="ALL">All statuses</option>
+          <option value="SCHEDULED">Scheduled</option>
+          <option value="DELAYED">Delayed</option>
+          <option value="CANCELED">Canceled</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="search-route">Search by origin or destination</label>
+        <input
+          id="search-route"
+          type="text"
+          [formControl]="routeControl"
+        />
+      </div>
+
+      <button type="button" class="btn btn-secondary" (click)="clearFilters()">Clear</button>
+    </div>
+
+    @if (dashboardData$ | async; as data) {
+      @let flights = data.flights;
+      @let statusCounts = data.statusCounts;
+
+      <div class="summary-grid">
+        <app-summary-card title="Total Flights" [count]="flights.length" />
+        <app-summary-card title="Scheduled" [count]="statusCounts.SCHEDULED" />
+        <app-summary-card title="Delayed" [count]="statusCounts.DELAYED" />
+        <app-summary-card title="Canceled" [count]="statusCounts.CANCELED" />
+      </div>
+
+      @if (filteredFlights$ | async; as filteredFlights) {
+        <app-flight-list
+          [flights]="filteredFlights"
+          (deleteRequested)="onDeleteFlight($event)"
+          [emptyMessage]="
+            flights.length === 0
+              ? 'No flights available. Add your first flight.'
+              : 'No flights match your filters.'
+          "
+        />
+
+        @if (errorMessage(); as message) {
+          <p role="alert">{{ message }}</p>
+        }
+      }
+
+      <a routerLink="/flights/new" class="btn btn-primary">Add Flight</a>
+    }
+  }
+</section>

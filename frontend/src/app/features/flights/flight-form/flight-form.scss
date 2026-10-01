@@ -1,0 +1,73 @@
+@use '../../../../styles/variables' as vars;
+@use '../../../../styles/mixins' as mixins;
+
+.flight-form {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: vars.$color-surface;
+  border: 1px solid vars.$color-border;
+  border-radius: 12px;
+
+  h2 {
+    margin: 0 0 24px;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  input,
+  select {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid #94a3b8;
+    border-radius: 6px;
+    background-color: vars.$color-surface;
+
+    @include mixins.focus-ring;
+
+
+
+    &.ng-invalid.ng-touched {
+      border-color: vars.$color-danger;
+    }
+
+    &:disabled {
+      background-color: #e2e8f0;
+      color: vars.$color-muted;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.field-error {
+  margin: 0;
+  color: vars.$color-danger;
+  font-size: 13px;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+[role="alert"] {
+  color: vars.$color-danger;
+}
+
+[role="status"] {
+  color: vars.$color-success;
+}
