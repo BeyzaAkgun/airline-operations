@@ -1,5 +1,7 @@
 # Airline Operations Dashboard
 
+[![CI](https://github.com/BeyzaAkgun/airline-operations/actions/workflows/ci.yml/badge.svg)](https://github.com/BeyzaAkgun/airline-operations/actions/workflows/ci.yml)
+
 A full-stack application for managing flight operations, built with Angular, Spring Boot, and PostgreSQL.
 
 ## Features
@@ -22,15 +24,16 @@ Departure times are entered in the user's local time and displayed in UTC in the
 
 ## Technology Stack
 
-**Frontend**
+### Frontend
+
 - Angular 21
 - TypeScript
 - RxJS and Signals
 - Reactive Forms
 - Sass
-- Vitest
 
-**Backend**
+### Backend
+
 - Java 25
 - Spring Boot 4
 - Spring Data JPA / Hibernate
@@ -38,16 +41,20 @@ Departure times are entered in the user's local time and displayed in UTC in the
 - PostgreSQL
 - Maven
 
-**Testing and CI**
-- JUnit and Mockito
-- MockMvc controller tests
-- Testcontainers with PostgreSQL
-- Angular HTTP service tests
-- GitHub Actions
+### Testing and CI
+
+- Vitest for Angular component and HTTP service tests
+- JUnit and Mockito for backend service tests
+- MockMvc for controller and validation tests
+- Testcontainers with PostgreSQL for repository and application context tests
+- Playwright for end-to-end browser tests
+- GitHub Actions for automated builds and tests
 
 ## Repository Structure
 
 - `frontend/` — Angular application
+- `frontend/e2e/` — Playwright test scenarios
+- `frontend/playwright.config.ts` — Playwright configuration
 - `backend/` — Spring Boot REST API
 - `.github/workflows/ci.yml` — Build and test workflow
 
@@ -63,18 +70,20 @@ Earlier Java, JavaScript, and TypeScript practice implementations are available 
 
 The backend includes the Maven Wrapper, so a separate Maven installation is not required.
 
+The local commands below use PowerShell. On Linux or macOS, use `bash mvnw` instead of `.\mvnw.cmd` and configure environment variables using your shell.
+
 ## Run Locally
 
 ### 1. Clone the repository
 
-```bash
+```powershell
 git clone https://github.com/BeyzaAkgun/airline-operations.git
 cd airline-operations
 ```
 
-### 2. Create the database
+### 2. Create the development database
 
-Create a PostgreSQL database named `airline_operations`:
+Create a PostgreSQL database:
 
 ```sql
 CREATE DATABASE airline_operations;
@@ -82,16 +91,18 @@ CREATE DATABASE airline_operations;
 
 The default connection settings are:
 
-- Host: `localhost`
-- Port: `5432`
-- Database: `airline_operations`
-- Username: `postgres`
+| Setting | Value |
+|---|---|
+| Host | `localhost` |
+| Port | `5432` |
+| Database | `airline_operations` |
+| Username | `postgres` |
 
-Set `DB_PASSWORD` to the password of your local PostgreSQL user. Do not commit database credentials.
+The database password is read from the `DB_PASSWORD` environment variable. Do not commit real credentials.
 
 ### 3. Start the backend
 
-From the repository root, in PowerShell:
+From the repository root:
 
 ```powershell
 cd backend
@@ -99,9 +110,11 @@ $env:DB_PASSWORD = "YOUR_LOCAL_POSTGRES_PASSWORD"
 .\mvnw.cmd spring-boot:run
 ```
 
+The environment variable applies to the current PowerShell session.
+
 Alternatively, configure `DB_PASSWORD` in the IntelliJ run configuration and run `AirlineOperationsApiApplication`.
 
-The API runs at:
+The API is available at:
 
 ```text
 http://localhost:8080/api/flights
@@ -127,7 +140,9 @@ Open:
 http://localhost:4200
 ```
 
-The frontend currently uses `http://localhost:8080/api/flights` as its API URL. Backend CORS configuration allows the local Angular origin, `http://localhost:4200`.
+The frontend currently uses `http://localhost:8080/api/flights` as its API URL.
+
+Backend CORS configuration allows requests from `http://localhost:4200`.
 
 ## REST API
 
@@ -141,7 +156,11 @@ The frontend currently uses `http://localhost:8080/api/flights` as its API URL. 
 | PATCH | `/api/flights/{flightNumber}/status` | Update flight status | 200 |
 | DELETE | `/api/flights/{flightNumber}` | Delete a flight | 204 |
 
-Supported statuses: `SCHEDULED`, `DELAYED`, `CANCELED`.
+Supported statuses:
+
+- `SCHEDULED`
+- `DELAYED`
+- `CANCELED`
 
 ### Create Flight Request
 
@@ -151,12 +170,24 @@ Supported statuses: `SCHEDULED`, `DELAYED`, `CANCELED`.
   "origin": "Istanbul",
   "destination": "Antalya",
   "status": "SCHEDULED",
-  "departureTime": "2026-10-01T10:00:00Z",
+  "departureTime": "2026-12-20T10:00:00Z",
   "gate": "A12"
 }
 ```
 
-The update request uses the same fields except `flightNumber`, which is supplied in the URL and remains unchanged.
+### Update Flight Request
+
+The flight number is supplied in the URL and remains unchanged.
+
+```json
+{
+  "origin": "Istanbul",
+  "destination": "London",
+  "status": "DELAYED",
+  "departureTime": "2026-12-20T11:00:00Z",
+  "gate": "B10"
+}
+```
 
 ### Update Status Request
 
@@ -166,9 +197,19 @@ The update request uses the same fields except `flightNumber`, which is supplied
 }
 ```
 
+### Validation
+
+- Flight number is required, must not be blank, and must contain 2–10 characters.
+- Flight numbers are trimmed and normalized to uppercase.
+- Origin and destination are required and must not exceed 100 characters.
+- Status and departure time are required.
+- Departure time must use a valid date-time format with an offset.
+- Gate is optional and must not exceed 10 characters.
+- Duplicate flight numbers are rejected.
+
 ### Error Responses
 
-The API provides a consistent error response structure:
+The API uses a consistent error response structure. For example:
 
 ```json
 {
@@ -177,30 +218,46 @@ The API provides a consistent error response structure:
   "message": "Validation failed.",
   "path": "/api/flights",
   "fieldErrors": {
-    "origin": "Origin is required."
+    "origin": "Origin is required"
   }
 }
 ```
 
-- `400` — Invalid request or validation failure
-- `404` — Flight not found
-- `409` — Duplicate flight number
-- `500` — Unexpected server error
+| Status | Meaning |
+|---|---|
+| 400 | Invalid request or validation failure |
+| 404 | Flight not found |
+| 409 | Duplicate flight number |
+| 500 | Unexpected server error |
+
+Field-level validation messages are returned in `fieldErrors`. Other handled errors use an empty map.
 
 ## Tests
 
-### Frontend
+The current automated suite contains 24 tests:
+
+| Suite | Tests |
+|---|---:|
+| Angular component and HTTP service tests | 7 |
+| Backend service tests | 7 |
+| Backend controller tests | 5 |
+| PostgreSQL repository tests | 2 |
+| Application context test | 1 |
+| Playwright end-to-end tests | 2 |
+
+### Frontend Tests and Build
 
 From `frontend/`:
 
 ```powershell
+npm ci
 npx ng test --watch=false
 npm run build
 ```
 
-The current frontend suite contains 7 tests covering the root component and HTTP service behavior.
+The Angular tests cover the root component and HTTP service behavior, including state updates after API responses.
 
-### Backend
+### Backend Tests
 
 Start Docker, then run from `backend/`:
 
@@ -214,28 +271,124 @@ On Linux or macOS:
 bash mvnw test
 ```
 
-The current backend suite contains 15 tests:
+Backend coverage includes:
 
-- 7 service unit tests
-- 5 controller tests
-- 2 PostgreSQL repository tests
-- 1 application context test
+- Service behavior for creating, updating, deleting, and changing flight status
+- Missing-flight and duplicate-flight handling
+- Controller HTTP status codes, validation, and error responses
+- Saving and retrieving flights through PostgreSQL
+- Database enforcement of unique flight numbers
+- Application startup with a test database
 
-Repository and application context tests use isolated PostgreSQL containers managed by Testcontainers. They do not require the local development database.
+Repository and application context tests use isolated PostgreSQL containers managed by Testcontainers. They do not require the local development database or its password.
+
+The PostgreSQL image may take additional time to download on the first run.
+
+### End-to-End Tests
+
+Playwright runs against the Angular frontend and the real Spring Boot API backed by a separate PostgreSQL database.
+
+The current scenarios cover:
+
+1. Loading flights on the dashboard.
+2. Creating, searching for, editing, and deleting a flight through the UI.
+
+#### 1. Create the E2E database
+
+```sql
+CREATE DATABASE airline_operations_e2e;
+```
+
+#### 2. Start the backend with the E2E profile
+
+Stop any backend already running on port 8080.
+
+From `backend/`, in PowerShell:
+
+```powershell
+$env:DB_PASSWORD = "YOUR_LOCAL_POSTGRES_PASSWORD"
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=e2e"
+```
+
+Alternatively, add this program argument to the IntelliJ application run configuration:
+
+```text
+--spring.profiles.active=e2e
+```
+
+Configure `DB_PASSWORD` in that run configuration as well.
+
+The `e2e` profile uses `application-e2e.properties` to connect to `airline_operations_e2e`. On an empty flights table, the application inserts its sample flights.
+
+The dashboard-loading test expects the sample flight `TX23` to be present.
+
+#### 3. Install Playwright and run tests
+
+In a separate terminal, from `frontend/`:
+
+```powershell
+npm ci
+npx playwright install chromium
+npm run test:e2e
+```
+
+Playwright starts Angular automatically. Stop any existing Angular server on port 4200 before running the tests.
+
+To watch the browser during execution:
+
+```powershell
+npm run test:e2e -- --headed
+```
+
+Tests run sequentially in Chromium. On failure, Playwright retains traces and screenshots under `frontend/test-results/`.
+
+The CRUD test uses a generated flight number and attempts API cleanup in a `finally` block, including when the test fails.
+
+To return to normal development, stop the E2E backend and restart without the `e2e` profile.
 
 ## Continuous Integration
 
-GitHub Actions runs on pushes to `main`, pull requests targeting `main`, and manual triggers.
+[View workflow runs](https://github.com/BeyzaAkgun/airline-operations/actions)
 
-Two independent jobs run:
+GitHub Actions runs on:
 
-- **Frontend:** Install dependencies, build the Angular application, and run tests.
-- **Backend:** Set up Java and run Maven tests, including Testcontainers tests.
+- Pushes to `main`
+- Pull requests targeting `main`
+- Manual workflow triggers
+
+The workflow contains three jobs:
+
+### Frontend
+
+- Set up Node.js
+- Install dependencies with `npm ci`
+- Build the Angular application
+- Run Angular tests
+
+### Backend
+
+- Set up Java 25
+- Run Maven tests, including PostgreSQL Testcontainers tests
+
+### End-to-End
+
+After the frontend and backend jobs succeed:
+
+- Start a separate PostgreSQL service
+- Install frontend dependencies and Chromium
+- Package and start the backend with the `e2e` profile
+- Wait for the API and sample flight to be available
+- Run Playwright tests
+
+The E2E job uploads backend logs and available Playwright failure diagnostics as the `e2e-diagnostics` artifact, retained for seven days.
+
+CI uses a temporary test database and does not require local development credentials.
 
 This workflow validates the application; it does not deploy it.
 
-## Planned Improvements
+## Current Scope and Planned Improvements
 
-- Playwright end-to-end tests for browser-based flight management
-- Integration of E2E tests into GitHub Actions
-- Additional UI refinements and dependency maintenance
+- The frontend API URL and CORS origin currently target local development.
+- The development and E2E profiles use Hibernate schema updates.
+- Sample flights are inserted whenever the flights table is empty at startup.
+- Further work includes UI refinements, dependency maintenance, and broader automated test coverage.
